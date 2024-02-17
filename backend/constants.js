@@ -1,3 +1,1 @@
-export const DB_NAME = "loginDetails"
-
-
+export const DB_NAME = "loginDetails";
