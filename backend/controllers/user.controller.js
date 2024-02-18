@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
@@ -107,21 +108,22 @@ const updatePass = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   try {
-    // console.log(req.cookies) ;
+    // console.log(req.cookies);
 
-    // const authToken = req.cookies?.accessToken || (req.header("Authorization")?.replace("Bearer ", "") || '');
+    const authToken =
+      req.cookies?.accessToken ||
+      req.header("Authorization")?.replace("Bearer ", "") ||
+      "";
 
     // console.log(authToken);
 
-    // if(!authToken) {
-    //     throw new ApiError(401, "Unauthorised request")
-    // }
+    if (!authToken) {
+      throw new ApiError(401, "Unauthorised request");
+    }
 
-    // const decodedToken = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET)
+    const decodedToken = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET);
 
-    const { username } = req.body;
-
-    const user = await User.findOne({ username });
+    const user = await User.findById(decodedToken?._id);
 
     if (!user) {
       return res
@@ -148,44 +150,57 @@ const updatePass = asyncHandler(async (req, res) => {
       .json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "An error occurred while changing password",
-      });
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while changing password",
+    });
   }
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const { username } = req.body;
-  console.log(username);
-
-  const { email, age, address } = req.body;
+  const { username, email, age, address } = req.body;
 
   if (!username || !email || !age || !address) {
     throw new ApiError(400, "All fields are required");
   }
 
-  const user = await User.findOneAndUpdate(
-    { username },
-    {
-      $set: {
-        email,
-        age,
-        address,
-      },
-    },
-    { new: true }
-  ).select("-password");
+  try {
+    const authToken =
+      req.cookies?.accessToken ||
+      req.header("Authorization")?.replace("Bearer ", "") ||
+      "";
 
-  return res
-    .status(200)
-    .json({
+    if (!authToken) {
+      throw new ApiError(401, "Unauthorised request");
+    }
+
+    const decodedToken = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET);
+
+    const user = await User.findByIdAndUpdate(
+      decodedToken?._id,
+      {
+        $set: {
+          username,
+          email,
+          age,
+          address,
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    return res.status(200).json({
       status: true,
       user,
       message: "Account details updated successfully",
     });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while changing password",
+    });
+  }
 });
 
 export { registerUser, loginUser, logoutUser, updatePass, updateUser };
