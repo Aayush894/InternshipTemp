@@ -73,15 +73,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const isPasswordValid = await user.isPasswordCorrect(password);
 
-  console.log(password);
-  console.log(user);
-
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid Credentials");
   }
 
   const authToken = await user.generateAuthToken();
-  console.log(authToken);
 
   const options = {
     httpOnly: true,
@@ -95,8 +91,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  console.log(req.cookie);
-  console.log(req.body);
 
   return res
     .status(200)
@@ -108,14 +102,10 @@ const updatePass = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   try {
-    // console.log(req.cookies);
-
     const authToken =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "") ||
       "";
-
-    // console.log(authToken);
 
     if (!authToken) {
       throw new ApiError(401, "Unauthorised request");
