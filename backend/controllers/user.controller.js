@@ -21,14 +21,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
-  });
-
-  if (existedUser) {
-    throw new ApiError(409, "User with email or username already exists");
-  }
-
   // check for valid username format ie. only in lowercase
   const isValidUsername = (username) => {
     const usernameRegex = /^[a-z]+\d*$/;
@@ -37,13 +29,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // check for valid email id
   const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
     return emailRegex.test(email);
   }
 
   // check for valid age
   const isValidAge = (age) => {
-    return Number.isInteger(age) && age > 0;
+    const ageInt = parseInt(age); 
+    return Number.isInteger(ageInt) && parseInt(ageInt) > 0;
   }
 
   // check for valid address
@@ -51,6 +44,12 @@ const registerUser = asyncHandler(async (req, res) => {
     return address.trim() !== "";
   }
   
+  // check for valid password min length is 8.
+  const isValidPassword = (password) => {
+    const passwordRegex = /^.{4,}$/; 
+    return passwordRegex.test(password); 
+  }
+
   if (!isValidUsername(username)) {
     throw new ApiError(400, "Username must consist of lowercase letters followed by digits");
   }
@@ -65,6 +64,27 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!isValidAddress(address)) {
     throw new ApiError(400, "Address cannot be empty");
+  }
+
+  if (!isValidPassword(password)) {
+    throw new ApiError(400, "Password must have min Length 4");
+  }
+
+  // check existance of user with same username or email
+  const existedUserWithUsername = await User.findOne({
+    username,
+  });
+
+  const existedUserWithEmail = await User.findOne({
+    email
+  });
+
+  if (existedUserWithUsername) {
+    throw new ApiError(409, "User with username already exists");
+  }
+
+  if (existedUserWithEmail) {
+    throw new ApiError(409, "User with email already exists");
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -101,6 +121,26 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "username or email is required");
   }
 
+  // check for valid username format ie. only in lowercase
+  const isValidUsername = (username) => {
+    const usernameRegex = /^[a-z]+\d*$/;
+    return usernameRegex.test(username);
+  }
+
+  // check for valid email id
+  const isValidEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
+    return emailRegex.test(email);
+  }
+
+  if (username && !isValidUsername(username)) {
+    throw new ApiError(400, "Enter valid username");
+  }
+
+  if (email && !isValidEmail(email)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+  
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
@@ -113,6 +153,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid Credentials");
+
   }
 
   const authToken = await user.generateAuthToken();
@@ -137,6 +178,16 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const updatePass = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
+
+  // check for valid password min length is 8.
+  const isValidPassword = (password) => {
+    const passwordRegex = /^.{4,}$/; 
+    return passwordRegex.test(password); 
+  }
+
+  if (!isValidPassword(newPassword)) {
+    throw new ApiError(400, "newPassword is Invalid");
+  }
 
   try {
     const authToken =
@@ -190,8 +241,47 @@ const updateUser = asyncHandler(async (req, res) => {
   if (!username || !email || !age || !address) {
     throw new ApiError(400, "All fields are required");
   }
+  // check for valid username format ie. only in lowercase
+  const isValidUsername = (username) => {
+    const usernameRegex = /^[a-z]+\d*$/;
+    return usernameRegex.test(username);
+  }
+
+  // check for valid email id
+  const isValidEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
+    return emailRegex.test(email);
+  }
+
+  // check for valid age
+  const isValidAge = (age) => {
+    const ageInt = parseInt(age) ; 
+    return Number.isInteger(ageInt) && parseInt(ageInt) > 0;
+  }
+
+  // check for valid address
+  const isValidAddress = (address) => {
+    return address.trim() !== "";
+  }
+  
+  if (!isValidUsername(username)) {
+    throw new ApiError(400, "Username must consist of lowercase letters followed by digits");
+  }
+
+  if (!isValidEmail(email)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+
+  if (!isValidAge(age)) {
+    throw new ApiError(400, "Age must be a positive integer");
+  }
+
+  if (!isValidAddress(address)) {
+    throw new ApiError(400, "Address cannot be empty");
+  }
 
   try {
+    
     const authToken =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "") ||
@@ -225,7 +315,7 @@ const updateUser = asyncHandler(async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while changing password",
+      message: "An error occurred while changing details",
     });
   }
 });
