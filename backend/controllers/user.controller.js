@@ -22,11 +22,49 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const existedUser = await User.findOne({
-    username,
+    $or: [{ username }, { email }],
   });
 
   if (existedUser) {
     throw new ApiError(409, "User with email or username already exists");
+  }
+
+  // check for valid username format ie. only in lowercase
+  const isValidUsername = (username) => {
+    const usernameRegex = /^[a-z]+\d*$/;
+    return usernameRegex.test(username);
+  }
+
+  // check for valid email id
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  // check for valid age
+  const isValidAge = (age) => {
+    return Number.isInteger(age) && age > 0;
+  }
+
+  // check for valid address
+  const isValidAddress = (address) => {
+    return address.trim() !== "";
+  }
+  
+  if (!isValidUsername(username)) {
+    throw new ApiError(400, "Username must consist of lowercase letters followed by digits");
+  }
+
+  if (!isValidEmail(email)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+
+  if (!isValidAge(age)) {
+    throw new ApiError(400, "Age must be a positive integer");
+  }
+
+  if (!isValidAddress(address)) {
+    throw new ApiError(400, "Address cannot be empty");
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -91,7 +129,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-
   return res
     .status(200)
     .clearCookie("authToken")
