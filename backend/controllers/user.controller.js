@@ -25,33 +25,36 @@ const registerUser = asyncHandler(async (req, res) => {
   const isValidUsername = (username) => {
     const usernameRegex = /^[a-z]+\d*$/;
     return usernameRegex.test(username);
-  }
+  };
 
   // check for valid email id
   const isValidEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
     return emailRegex.test(email);
-  }
+  };
 
   // check for valid age
   const isValidAge = (age) => {
-    const ageInt = parseInt(age); 
+    const ageInt = parseInt(age);
     return Number.isInteger(ageInt) && parseInt(ageInt) > 0;
-  }
+  };
 
   // check for valid address
   const isValidAddress = (address) => {
     return address.trim() !== "";
-  }
-  
+  };
+
   // check for valid password min length is 8.
   const isValidPassword = (password) => {
-    const passwordRegex = /^.{4,}$/; 
-    return passwordRegex.test(password); 
-  }
+    const passwordRegex = /^.{4,}$/;
+    return passwordRegex.test(password);
+  };
 
   if (!isValidUsername(username)) {
-    throw new ApiError(400, "Username must consist of lowercase letters followed by digits");
+    throw new ApiError(
+      400,
+      "Username must consist of lowercase letters followed by digits"
+    );
   }
 
   if (!isValidEmail(email)) {
@@ -76,7 +79,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const existedUserWithEmail = await User.findOne({
-    email
+    email,
   });
 
   if (existedUserWithUsername) {
@@ -125,13 +128,13 @@ const loginUser = asyncHandler(async (req, res) => {
   const isValidUsername = (username) => {
     const usernameRegex = /^[a-z]+\d*$/;
     return usernameRegex.test(username);
-  }
+  };
 
   // check for valid email id
   const isValidEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
     return emailRegex.test(email);
-  }
+  };
 
   if (username && !isValidUsername(username)) {
     throw new ApiError(400, "Enter valid username");
@@ -140,7 +143,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (email && !isValidEmail(email)) {
     throw new ApiError(400, "Invalid email address");
   }
-  
+
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
@@ -153,7 +156,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid Credentials");
-
   }
 
   const authToken = await user.generateAuthToken();
@@ -181,9 +183,9 @@ const updatePass = asyncHandler(async (req, res) => {
 
   // check for valid password min length is 8.
   const isValidPassword = (password) => {
-    const passwordRegex = /^.{4,}$/; 
-    return passwordRegex.test(password); 
-  }
+    const passwordRegex = /^.{4,}$/;
+    return passwordRegex.test(password);
+  };
 
   if (!isValidPassword(newPassword)) {
     throw new ApiError(400, "newPassword is Invalid");
@@ -245,27 +247,30 @@ const updateUser = asyncHandler(async (req, res) => {
   const isValidUsername = (username) => {
     const usernameRegex = /^[a-z]+\d*$/;
     return usernameRegex.test(username);
-  }
+  };
 
   // check for valid email id
   const isValidEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
     return emailRegex.test(email);
-  }
+  };
 
   // check for valid age
   const isValidAge = (age) => {
-    const ageInt = parseInt(age) ; 
+    const ageInt = parseInt(age);
     return Number.isInteger(ageInt) && parseInt(ageInt) > 0;
-  }
+  };
 
   // check for valid address
   const isValidAddress = (address) => {
     return address.trim() !== "";
-  }
-  
+  };
+
   if (!isValidUsername(username)) {
-    throw new ApiError(400, "Username must consist of lowercase letters followed by digits");
+    throw new ApiError(
+      400,
+      "Username must consist of lowercase letters followed by digits"
+    );
   }
 
   if (!isValidEmail(email)) {
@@ -281,7 +286,6 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   try {
-    
     const authToken =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "") ||
